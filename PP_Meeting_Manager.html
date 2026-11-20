@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PP Meeting Manager</title>
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--bd:#d7dce6;--tx:#1b2333;--mut:#6b7488;--pri:#1f5fd1;--pri2:#e7efff;--ok:#1f9d55;--bad:#d64545;--warn:#c98a00}
+*{box-sizing:border-box}
+body{margin:0;font-family:Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--bd);padding:8px 14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.row1{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.brand b{font-size:17px}.brand small{display:block;color:var(--mut);font-size:11px}
+.tabs button{border:1px solid var(--bd);background:#fff;padding:7px 14px;cursor:pointer;font-size:13px}
+.tabs button:first-child{border-radius:8px 0 0 8px}.tabs button:last-child{border-radius:0 8px 8px 0;border-left:0}
+.tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+button.b{border:1px solid var(--bd);background:#fff;border-radius:7px;padding:6px 10px;cursor:pointer;font-size:13px}
+button.b:hover:not(:disabled){background:var(--pri2);border-color:var(--pri)}
+button.b:disabled{opacity:.4;cursor:not-allowed}
+button.b.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+button.b.pri:hover{background:#174bab}
+button.b.red{color:var(--bad)}
+#status{font-size:12px;color:var(--mut);margin-top:5px}
+main{max-width:1250px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card h2 .prog{font-size:12px;font-weight:600;background:var(--pri2);color:var(--pri);border-radius:20px;padding:2px 10px}
+.card h2 .tools{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+label.f{display:block;font-size:12px;color:var(--mut)}
+label.f input,label.f textarea{display:block;width:100%;margin-top:3px}
+input[type=text],input[type=date],input[type=number],select,textarea,input:not([type]){border:1px solid var(--bd);border-radius:6px;padding:6px 8px;font:inherit;background:#fff;color:var(--tx);min-width:0}
+input:focus,select:focus,textarea:focus{outline:2px solid #9bbcf5;border-color:var(--pri)}
+textarea{width:100%;resize:vertical;min-height:34px}
+.item{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px;border:1px solid var(--bd);border-radius:8px;margin-bottom:6px;background:#fcfdff}
+.item .no{width:24px;text-align:right;color:var(--mut);font-size:12px}
+.item .t{flex:2 1 220px}.item .n{flex:1 1 150px}.item .r{flex:1.5 1 180px}.item .o{flex:1 1 120px}
+.item.ok{background:#effaf3;border-color:#b7e3c6}
+.item.bad{background:#fdf1f1;border-color:#f0c3c3}
+.item.ex{background:#fff8e6;border-color:#f1de9f}
+.item .chk{display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap}
+.item .chk input{width:18px;height:18px}
+.item .notes{flex:1 1 100%;margin-left:30px;width:calc(100% - 30px)}
+.acts{display:flex;gap:2px;margin-left:auto}
+.acts button{border:0;background:transparent;cursor:pointer;font-size:15px;padding:3px 6px;border-radius:5px;color:var(--mut)}
+.acts button:hover{background:#e9edf5;color:var(--tx)}
+.acts button.x:hover{background:#fde4e4;color:var(--bad)}
+.addbar{display:flex;gap:6px;margin-top:8px}.addbar input{flex:1}
+.warn{margin-top:10px;padding:8px 10px;border-radius:7px;font-size:13px}
+.warn.w{background:#fff4d6;color:#7a5600}.warn.g{background:#e5f6ec;color:#12643a}
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:10px}
+.filters label{font-size:12px;color:var(--mut)}.filters input,.filters select{display:block;margin-top:3px}
+.tw{overflow:auto;border:1px solid var(--bd);border-radius:8px}
+table{border-collapse:collapse;width:100%;background:#fff}
+th,td{padding:7px 9px;border-bottom:1px solid #e8ebf2;text-align:left;font-size:13px;white-space:nowrap}
+th{background:#eef1f7;position:sticky;top:0;cursor:pointer;user-select:none}
+tr.rw:hover{background:#f5f8ff}
+.pill{display:inline-block;padding:1px 8px;border-radius:12px;font-size:12px;background:#eef1f7}
+.pill.ok{background:#dff3e7;color:#12643a}.pill.pr{background:#fff0cf;color:#7a5600}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1b2333;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+#toast.on{opacity:1}
+.muted{color:var(--mut);font-size:12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:18px}
+.two h3{margin:0 0 8px;font-size:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.two h3 .prog{font-size:12px;font-weight:600;background:var(--pri2);color:var(--pri);border-radius:20px;padding:2px 10px}
+.item .q{flex:0 1 110px}.item .dd{flex:0 1 150px}
+@media(max-width:700px){.bar{margin-left:0}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="row1">
+    <div class="brand"><b>PP Meeting Manager</b><small>Pre-Production Meeting • works offline</small></div>
+    <div class="tabs">
+      <button id="tabForm" class="on" data-tab="form">📝 Meeting Form</button><button id="tabData" data-tab="data">📊 Data Sheet <span id="cnt"></span></button>
+    </div>
+    <div class="bar">
+      <button class="b" data-act="new" title="New meeting form">➕ New</button>
+      <button class="b pri" data-act="save" title="Ctrl+S">💾 Save</button>
+      <button class="b" data-act="undo" id="bUndo" title="Ctrl+Z">↶ Undo</button>
+      <button class="b" data-act="redo" id="bRedo" title="Ctrl+Y">↷ Redo</button>
+      <button class="b" data-act="print">🖨 Print</button>
+      <button class="b" data-act="report">📄 Report (Word)</button>
+      <button class="b" data-act="excel">📗 Excel</button>
+      <button class="b" data-act="backup">⬇ Backup</button>
+      <button class="b" data-act="restore">⬆ Restore</button>
+    </div>
+  </div>
+  <div id="status"></div>
+</header>
+
+<main>
+<section id="pgForm">
+  <div class="card">
+    <h2>Meeting Details</h2>
+    <div class="grid">
+      <label class="f">Style No *<input type="text" data-h="styleNo" placeholder="e.g. ST-1234"></label>
+      <label class="f">Buyer / Customer<input type="text" data-h="buyer"></label>
+      <label class="f">PO No<input type="text" data-h="po"></label>
+      <label class="f">Order Qty<input type="text" data-h="qty"></label>
+      <label class="f">PP Meeting Date<input type="date" data-h="meetingDate"></label>
+      <label class="f">Plan Cut Date<input type="date" data-h="planCutDate"></label>
+      <label class="f">Venue<input type="text" data-h="venue"></label>
+      <label class="f">Hosted by (QA Manager)<input type="text" data-h="host"></label>
+    </div>
+    <label class="f" style="margin-top:10px">General notes<textarea data-h="notes" rows="2"></textarea></label>
+    <div id="warn"></div>
+  </div>
+  <div id="secs"></div>
+</section>
+
+<section id="pgData" hidden>
+  <div class="card">
+    <h2>Saved Meetings – Data Sheet
+      <span class="tools">
+        <button class="b" data-act="xlsSummary">📗 Excel (summary)</button>
+        <button class="b" data-act="xlsDetail">📗 Excel (all details)</button>
+        <button class="b" data-act="csv">CSV</button>
+        <button class="b" data-act="printList">🖨 Print list</button>
+      </span>
+    </h2>
+    <div class="filters">
+      <label>Search (Style / Buyer / PO)<input type="text" id="fQ" placeholder="search..."></label>
+      <label>Meeting date from<input type="date" id="fFrom"></label>
+      <label>to<input type="date" id="fTo"></label>
+      <label>Status<select id="fSt"><option value="">All</option><option value="complete">Complete</option><option value="incomplete">Incomplete</option></select></label>
+      <button class="b" data-act="clearFilter">Clear filters</button>
+    </div>
+    <div class="tw"><table id="tbl"></table></div>
+    <div class="muted" id="dsInfo" style="margin-top:8px"></div>
+  </div>
+</section>
+</main>
+<input type="file" id="file" accept=".json,application/json" hidden>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10)};
+const nowStamp=()=>new Date().toISOString();
+const num=v=>parseFloat(String(v==null?'':v).replace(/,/g,''))||0;
+const mem={};
+const store={
+  get(k){try{return localStorage.getItem(k)}catch(e){return mem[k]==null?null:mem[k]}},
+  set(k,v){try{localStorage.setItem(k,v);return true}catch(e){mem[k]=v;return false}}
+};
+let toastT;
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200)}
+function dl(name,mime,content){
+  const b=new Blob([content],{type:mime});const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},800);
+}
+function printHTML(html){
+  const f=document.createElement('iframe');
+  f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(f);
+  const d=f.contentWindow.document;d.open();d.write(html);d.close();
+  setTimeout(()=>{f.contentWindow.focus();f.contentWindow.print();setTimeout(()=>f.remove(),60000)},350);
+}
+
+/* ---------- templates (from SOP) ---------- */
+const PARTICIPANTS=["QA Manager","QA Supervisor","QA Executive","Designated Auditor","FKR","Production Manager","Production Executive","Production Supervisor","IE Executive","Technician","Sample Room QA","Cutting Manager","Cutting QA Supervisor","Store Manager (or representative)","Fabric Inspector","Packing / Finishing In-charge","Finishing QA Supervisor","Mechanic","Merchandiser","Sample Room Pattern Maker"];
+const REQ_MAIN=["PP Meeting recap report","Style file (contents listed below)","Approved Sample","Supervisor line sample","Size set & appraisal form","Approved fabric hanger & approved shade bands","Fabric inspection & shrinkage reports","Approved swatches & strike offs for embroidery & printing"];
+const REQ_STYLE=["Final GSS","Final Spec","Before wash spec","Approved BOM","Approved trim card including packing trims and accessories","Product Line Review (PLR)","GPT (Garment performance test)","FPT (Fabric performance test)","Size Set adjustment","Green tag sample comments","Fabric Shrinkage report","PO sheets"];
+const DISCUSS=["Color wise order quantity","Production plan and delivery","TOP sample submission date","Availability of Minimum Requirements for Production (MRP)","Size set comments & pattern adjustment","Fabric inspection results & shrinkages","Cutting instruction","Embroidery, Print & embellishment","BOM – Trim card (Special: compare care instruction against trim card)","Technical details","Operational risk analysis of the style","Critical operations","Washing instruction","Safety regulations","Finishing instructions","Other comments"];
+const STATUS=["Pending","Discussed","Agreed","Action Required","N/A"];
+const SECS=[
+ {key:'participants',title:'1. Participants – Attendance',type:'att',ph:'Add participant / role...'},
+ {key:'reqMain',title:'2. Requirements Checklist (mandatory for PPM)',type:'chk',ph:'Add requirement...'},
+ {key:'reqStyle',title:'2a. Style File – contents',type:'chk',ph:'Add style file item...'},
+ {key:'discussion',title:'3. Discussion Points',type:'disc',ph:'Add discussion point...'}
+];
+const mkRow=()=>({id:uid(),color:'',po:'',qty:'',delivery:'',remark:''});
+const mkItem=t=>({id:uid(),text:t,name:'',att:'',signed:false,remark:'',done:false,status:'Pending',owner:'',due:'',notes:''});
+function newDraft(){
+  return {id:null,styleNo:'',buyer:'',po:'',qty:'',meetingDate:today(),planCutDate:'',venue:'',host:'',notes:'',
+    createdAt:null,updatedAt:null,colors:[mkRow()],pos:[mkRow()],
+    sections:{participants:PARTICIPANTS.map(mkItem),reqMain:REQ_MAIN.map(mkItem),reqStyle:REQ_STYLE.map(mkItem),discussion:DISCUSS.map(mkItem)}};
+}
+
+/* ---------- state ---------- */
+const KEY='ppm_db_v1',DKEY='ppm_draft_v1',BKEY='ppm_lastbackup_v1';
+let db={records:[]};
+function ensure(d){if(!Array.isArray(d.colors))d.colors=[];if(!Array.isArray(d.pos))d.pos=[];return d}
+try{const x=JSON.parse(store.get(KEY)||'null');if(x&&Array.isArray(x.records))db=x}catch(e){}
+db.records.forEach(ensure);
+let draft=newDraft(),dirty=false;
+try{const x=JSON.parse(store.get(DKEY)||'null');if(x&&x.draft&&x.draft.sections){draft=ensure(x.draft);dirty=!!x.dirty}}catch(e){}
+let hist=[],hi=-1,hTimer=null;
+const snap=()=>JSON.stringify(draft);
+function resetHist(){hist=[snap()];hi=0;clearTimeout(hTimer);hTimer=null;updBtns()}
+function pushHist(){
+  clearTimeout(hTimer);hTimer=null;const s=snap();if(hist[hi]===s)return;
+  hist=hist.slice(0,hi+1);hist.push(s);if(hist.length>200)hist.shift();hi=hist.length-1;updBtns();
+}
+function persistDraft(){store.set(DKEY,JSON.stringify({draft,dirty}))}
+function changed(mode){
+  dirty=true;persistDraft();
+  if(mode==='text'){clearTimeout(hTimer);hTimer=setTimeout(pushHist,700)}
+  else{pushHist();if(mode==='struct')render()}
+  updProgress();updStatus();
+}
+function updBtns(){$('#bUndo').disabled=hi<=0&&!hTimer;$('#bRedo').disabled=hi>=hist.length-1}
+function undo(){if(hTimer)pushHist();if(hi>0){hi--;draft=ensure(JSON.parse(hist[hi]));dirty=true;persistDraft();render();updBtns()}}
+function redo(){if(hi<hist.length-1){hi++;draft=JSON.parse(hist[hi]);dirty=true;persistDraft();render();updBtns()}}
+
+/* ---------- stats ---------- */
+function stats(r){
+  const s=r.sections,p=s.participants||[];
+  const req=[...(s.reqMain||[]),...(s.reqStyle||[])],dis=s.discussion||[];
+  return {pres:p.filter(x=>x.att==='Present').length,abs:p.filter(x=>x.att==='Absent').length,exc:p.filter(x=>x.att==='Excused').length,signed:p.filter(x=>x.signed).length,pTotal:p.length,
+    reqDone:req.filter(x=>x.done).length,reqTotal:req.length,
+    disDone:dis.filter(x=>x.status!=='Pending').length,disTotal:dis.length};
+}
+function ordInfo(r){
+  const ds=(r.pos||[]).map(x=>x.delivery).filter(Boolean).sort();
+  return {ct:(r.colors||[]).reduce((a,x)=>a+num(x.qty),0),pt:(r.pos||[]).reduce((a,x)=>a+num(x.qty),0),first:ds[0]||'',last:ds[ds.length-1]||''};
+}
+function updProgress(){
+  const s=draft.sections;
+  const set=(k,t)=>{const e=$('#prog-'+k);if(e)e.textContent=t};
+  const st=stats(draft);
+  set('participants',`Present ${st.pres}/${st.pTotal} • Absent ${st.abs} • Excused ${st.exc} • Signed ${st.signed}`);
+  set('reqMain',`${s.reqMain.filter(x=>x.done).length}/${s.reqMain.length} ready`);
+  set('reqStyle',`${s.reqStyle.filter(x=>x.done).length}/${s.reqStyle.length} ready`);
+  set('discussion',`${st.disDone}/${st.disTotal} discussed`);
+  const oi=ordInfo(draft),te=$('#tot-colors'),tp=$('#tot-pos'),ow=$('#ordwarn');
+  if(te)te.textContent='Total '+oi.ct.toLocaleString();
+  if(tp)tp.textContent='Total '+oi.pt.toLocaleString();
+  if(ow)ow.innerHTML=(oi.ct&&oi.pt&&oi.ct!==oi.pt)?`<div class="warn w">⚠ Color wise total (${oi.ct.toLocaleString()}) and PO wise total (${oi.pt.toLocaleString()}) do not match – difference ${Math.abs(oi.ct-oi.pt).toLocaleString()}.</div>`:'';
+  document.querySelectorAll('.item[data-s]').forEach(el=>{
+    const it=draft.sections[el.dataset.s]&&draft.sections[el.dataset.s][+el.dataset.i];if(!it)return;
+    const ty=el.dataset.ty;let c='';
+    if(ty==='att')c=it.att==='Present'?'ok':it.att==='Absent'?'bad':it.att==='Excused'?'ex':'';
+    else if(ty==='chk')c=it.done?'ok':'';
+    else c=(it.status==='Agreed'||it.status==='Discussed')?'ok':it.status==='Action Required'?'bad':'';
+    el.classList.remove('ok','bad','ex');if(c)el.classList.add(c);
+  });
+  const w=$('#warn'),m=draft.meetingDate,c=draft.planCutDate;
+  if(m&&c){
+    const diff=Math.round((new Date(c)-new Date(m))/86400000);
+    w.innerHTML=diff<3?`<div class="warn w">⚠ SOP: PP meeting must be held at least 3 days before the Plan Cut Date. Now: ${diff} day(s).</div>`
+      :`<div class="warn g">✔ PP meeting is ${diff} days before Plan Cut Date (SOP minimum 3 days).</div>`;
+  }else w.innerHTML='';
+  $('#cnt').textContent='('+db.records.length+')';
+}
+function updStatus(){
+  const lb=store.get(BKEY);let bk='never';let old=true;
+  if(lb){const d=new Date(lb);bk=d.toLocaleString();old=(Date.now()-d)>7*864e5}
+  const kb=((store.get(KEY)||'').length/1024).toFixed(1);
+  $('#status').innerHTML=`${draft.id?'Saved record':'New form (not saved yet)'} • ${dirty?'<b style="color:#c98a00">● Unsaved changes</b>':'<span style="color:#1f9d55">✓ All saved</span>'} • Records: ${db.records.length} • Storage used: ${kb} KB • Last backup: <span style="${old?'color:#d64545':''}">${esc(bk)}</span>${old?' – please take a Backup':''}`;
+}
+
+/* ---------- form render ---------- */
+function selOpts(list,val,blank){return (blank?`<option value="">${blank}</option>`:'')+list.map(o=>`<option${o===val?' selected':''}>${esc(o)}</option>`).join('')}
+function rowHTML(sec,it,i,n){
+  const d=`data-s="${sec.key}" data-i="${i}"`;
+  const acts=`<span class="acts"><button ${d} data-act="up" title="Move up">↑</button><button ${d} data-act="down" title="Move down">↓</button><button class="x" ${d} data-act="del" title="Remove">✕</button></span>`;
+  const txt=`<input type="text" class="t" ${d} data-f="text" value="${esc(it.text)}">`;
+  const no=`<span class="no">${i+1}</span>`;
+  if(sec.type==='att')return `<div class="item" ${d} data-ty="att">${no}${txt}<input type="text" class="n" ${d} data-f="name" placeholder="Name" value="${esc(it.name)}"><select ${d} data-f="att">${selOpts(['Present','Absent','Excused'],it.att,'— Attendance —')}</select><label class="chk"><input type="checkbox" ${d} data-f="signed"${it.signed?' checked':''}>Signed</label><input type="text" class="r" ${d} data-f="remark" placeholder="Remark" value="${esc(it.remark)}">${acts}</div>`;
+  if(sec.type==='chk')return `<div class="item" ${d} data-ty="chk">${no}<label class="chk"><input type="checkbox" ${d} data-f="done"${it.done?' checked':''}>Ready</label>${txt}<input type="text" class="r" ${d} data-f="remark" placeholder="Remark / who is responsible" value="${esc(it.remark)}">${acts}</div>`;
+  return `<div class="item" ${d} data-ty="disc">${no}${txt}<select ${d} data-f="status">${selOpts(STATUS,it.status)}</select><input type="text" class="o" ${d} data-f="owner" placeholder="Responsible" value="${esc(it.owner)}"><input type="date" ${d} data-f="due" value="${esc(it.due)}" title="Due date">${acts}<textarea class="notes" ${d} data-f="notes" rows="2" placeholder="Discussion notes / decision...">${esc(it.notes)}</textarea></div>`;
+}
+function orderHTML(){
+  const X=(t,i)=>`<span class="acts"><button class="x" data-act="delRow" data-t="${t}" data-i="${i}" title="Remove">✕</button></span>`;
+  const inp=(t,i,f,ph,v,c,ty)=>`<input type="${ty||'text'}" class="${c}" ${ty==='date'?'title="'+ph+'"':'placeholder="'+ph+'"'} ${f==='qty'?'inputmode="numeric"':''} data-t="${t}" data-i="${i}" data-f="${f}" value="${esc(v)}">`;
+  const cr=draft.colors.map((r,i)=>`<div class="item"><span class="no">${i+1}</span>${inp('colors',i,'color','Color',r.color,'n')}${inp('colors',i,'qty','Qty',r.qty,'q')}${inp('colors',i,'remark','Remark',r.remark,'r')}${X('colors',i)}</div>`).join('')||'<div class="muted">No colors yet.</div>';
+  const pr=draft.pos.map((r,i)=>`<div class="item"><span class="no">${i+1}</span>${inp('pos',i,'po','PO No',r.po,'n')}${inp('pos',i,'qty','Qty',r.qty,'q')}${inp('pos',i,'delivery','Delivery date',r.delivery,'dd','date')}${inp('pos',i,'remark','Remark',r.remark,'r')}${X('pos',i)}</div>`).join('')||'<div class="muted">No POs yet.</div>';
+  return `<div class="card"><h2>Order Breakdown</h2><div class="two"><div><h3>Color wise Qty <span class="prog" id="tot-colors"></span></h3>${cr}<div class="addbar"><button class="b pri" data-act="addColor">+ Add color</button></div></div><div><h3>PO wise Qty &amp; Delivery Date <span class="prog" id="tot-pos"></span></h3>${pr}<div class="addbar"><button class="b pri" data-act="addPO">+ Add PO</button></div></div></div><div id="ordwarn"></div></div>`;
+}
+function render(){
+  document.querySelectorAll('[data-h]').forEach(e=>{e.value=draft[e.dataset.h]||''});
+  let h=orderHTML();
+  for(const sec of SECS){
+    const arr=draft.sections[sec.key];
+    let tools='';
+    if(sec.type==='att')tools=`<button class="b" data-act="allPres">All present</button><button class="b" data-act="clrAtt">Clear</button><button class="b" data-act="allSign">All signed</button>`;
+    if(sec.type==='chk')tools=`<button class="b" data-s="${sec.key}" data-act="chkAll">Check all</button><button class="b" data-s="${sec.key}" data-act="unchkAll">Uncheck all</button>`;
+    h+=`<div class="card"><h2>${sec.title}<span class="prog" id="prog-${sec.key}"></span><span class="tools">${tools}</span></h2>`;
+    h+=arr.map((it,i)=>rowHTML(sec,it,i,arr.length)).join('')||'<div class="muted">No points. Add one below.</div>';
+    h+=`<div class="addbar"><input type="text" data-addin="${sec.key}" placeholder="${sec.ph}"><button class="b pri" data-act="add" data-s="${sec.key}">+ Add</button></div></div>`;
+  }
+  $('#secs').innerHTML=h;
+  updProgress();updStatus();updBtns();
+}
+
+/* ---------- editing events ---------- */
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.h){draft[t.dataset.h]=t.value;changed(t.type==='date'?'now':'text');return}
+  if(t.dataset.t){const it=draft[t.dataset.t][+t.dataset.i];if(it){it[t.dataset.f]=t.value;changed(t.type==='date'?'now':'text')}return}
+  if(t.dataset.f){
+    const it=draft.sections[t.dataset.s][+t.dataset.i];if(!it)return;
+    it[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;
+    changed(t.type==='checkbox'||t.tagName==='SELECT'||t.type==='date'?'now':'text');
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.dataset&&e.target.dataset.addin&&e.key==='Enter'){addItem(e.target.dataset.addin)}
+  const inField=/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)&&e.target.type!=='checkbox';
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();doSave()}
+  else if((e.ctrlKey||e.metaKey)&&!inField&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo()}
+  else if((e.ctrlKey||e.metaKey)&&!inField&&e.key.toLowerCase()==='y'){e.preventDefault();redo()}
+});
+function addItem(key){
+  const inp=document.querySelector(`[data-addin="${key}"]`);const v=inp.value.trim();
+  if(!v){inp.focus();return}
+  draft.sections[key].push(mkItem(v));changed('struct');
+  const n=document.querySelector(`[data-addin="${key}"]`);if(n)n.focus();
+}
+function move(key,i,dir){
+  const a=draft.sections[key],j=i+dir;if(j<0||j>=a.length)return;
+  [a[i],a[j]]=[a[j],a[i]];changed('struct');
+}
+const ACT={
+  new:()=>{if(dirty&&!confirm('Unsaved changes will be lost. Start a new form?'))return;draft=newDraft();dirty=false;persistDraft();resetHist();render();showTab('form')},
+  save:doSave,undo,redo,
+  print:()=>printHTML(reportHTML(draft)),
+  report:()=>dl(safe(draft.styleNo||'PP')+'_PP_Meeting_'+(draft.meetingDate||'')+'.doc','application/msword',reportHTML(draft)),
+  excel:()=>dl(safe(draft.styleNo||'PP')+'_PP_Meeting_'+(draft.meetingDate||'')+'.xls','application/vnd.ms-excel',xlsDoc(detailTable([draft]),'PP Meeting')),
+  backup:doBackup,restore:()=>$('#file').click(),
+  add:b=>addItem(b.dataset.s),
+  addColor:()=>{draft.colors.push(mkRow());changed('struct')},
+  addPO:()=>{draft.pos.push(mkRow());changed('struct')},
+  delRow:b=>{draft[b.dataset.t].splice(+b.dataset.i,1);changed('struct')},
+  del:b=>{draft.sections[b.dataset.s].splice(+b.dataset.i,1);changed('struct')},
+  up:b=>move(b.dataset.s,+b.dataset.i,-1),down:b=>move(b.dataset.s,+b.dataset.i,1),
+  allPres:()=>{draft.sections.participants.forEach(x=>x.att='Present');changed('struct')},
+  clrAtt:()=>{draft.sections.participants.forEach(x=>{x.att='';x.signed=false});changed('struct')},
+  allSign:()=>{draft.sections.participants.forEach(x=>{if(x.att==='Present')x.signed=true});changed('struct')},
+  chkAll:b=>{draft.sections[b.dataset.s].forEach(x=>x.done=true);changed('struct')},
+  unchkAll:b=>{draft.sections[b.dataset.s].forEach(x=>x.done=false);changed('struct')},
+  clearFilter:()=>{['#fQ','#fFrom','#fTo','#fSt'].forEach(s=>$(s).value='');renderData()},
+  xlsSummary:()=>dl('PP_Meetings_Summary_'+today()+'.xls','application/vnd.ms-excel',xlsDoc(summaryTable(filtered()),'Summary')),
+  xlsDetail:()=>dl('PP_Meetings_Details_'+today()+'.xls','application/vnd.ms-excel',xlsDoc(detailTable(filtered()),'Details')),
+  csv:()=>dl('PP_Meetings_Summary_'+today()+'.csv','text/csv;charset=utf-8','\ufeff'+toCSV(summaryRows(filtered()))),
+  printList:()=>printHTML(docWrap('PP Meetings – Data Sheet',summaryTable(filtered(),true))),
+  open:b=>{
+    const r=db.records.find(x=>x.id===b.dataset.id);if(!r)return;
+    if(dirty&&!confirm('Current form has unsaved changes. Open the selected record anyway?'))return;
+    draft=ensure(JSON.parse(JSON.stringify(r)));dirty=false;persistDraft();resetHist();render();showTab('form');window.scrollTo(0,0);
+  },
+  dup:b=>{
+    const r=db.records.find(x=>x.id===b.dataset.id);if(!r)return;
+    const c=JSON.parse(JSON.stringify(r));c.id=uid();c.createdAt=c.updatedAt=nowStamp();c.meetingDate=today();
+    c.sections.participants.forEach(x=>{x.att='';x.signed=false});
+    db.records.push(c);persistDB();renderData();toast('Duplicated (date set to today, attendance cleared)');
+  },
+  delrec:b=>{
+    const r=db.records.find(x=>x.id===b.dataset.id);if(!r)return;
+    if(!confirm(`Delete record ${r.styleNo} (${r.meetingDate})? Take a Backup first if unsure.`))return;
+    db.records=db.records.filter(x=>x.id!==r.id);
+    if(draft.id===r.id){draft.id=null;dirty=true;persistDraft()}
+    persistDB();renderData();updStatus();
+  },
+  prt:b=>{const r=db.records.find(x=>x.id===b.dataset.id);if(r)printHTML(reportHTML(r))}
+};
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-tab]');if(t){showTab(t.dataset.tab);return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const f=ACT[b.dataset.act];if(f)f(b);
+});
+
+/* ---------- persistence ---------- */
+function persistDB(){if(!store.set(KEY,JSON.stringify(db)))toast('⚠ Browser storage full/blocked – take a Backup now!');updStatus()}
+function doSave(){
+  if(hTimer)pushHist();
+  if(!draft.styleNo.trim()){toast('Enter the Style No first');$('[data-h=styleNo]').focus();return}
+  if(!draft.meetingDate){toast('Enter the meeting date');return}
+  let ex=draft.id?db.records.find(r=>r.id===draft.id):null;
+  if(!ex){
+    const dup=db.records.find(r=>r.styleNo.trim().toLowerCase()===draft.styleNo.trim().toLowerCase()&&r.meetingDate===draft.meetingDate);
+    if(dup){
+      if(!confirm(`A record for style ${dup.styleNo} on ${dup.meetingDate} already exists.\nOK = overwrite it, Cancel = go back.`))return;
+      ex=dup;
+    }
+  }
+  draft.updatedAt=nowStamp();
+  if(ex){draft.id=ex.id;draft.createdAt=ex.createdAt||draft.updatedAt;db.records[db.records.indexOf(ex)]=JSON.parse(JSON.stringify(draft))}
+  else{draft.id=uid();draft.createdAt=draft.updatedAt;db.records.push(JSON.parse(JSON.stringify(draft)))}
+  dirty=false;persistDB();persistDraft();updProgress();toast('✔ Saved');
+}
+function doBackup(){
+  const stamp=new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
+  dl('PP_Meeting_Backup_'+stamp+'.json','application/json',JSON.stringify({app:'ppm',version:1,exported:nowStamp(),records:db.records},null,1));
+  store.set(BKEY,nowStamp());updStatus();toast('Backup downloaded');
+}
+$('#file').addEventListener('change',e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const x=JSON.parse(rd.result);
+      if(!x||!Array.isArray(x.records))throw 0;
+      const recs=x.records.filter(r=>r&&r.id&&r.sections).map(r=>ensure(r));
+      if(confirm(`Backup contains ${recs.length} record(s).\n\nOK = MERGE with existing data (same record → newer one kept)\nCancel = more options`)){
+        recs.forEach(r=>{const i=db.records.findIndex(z=>z.id===r.id);
+          if(i<0)db.records.push(r);else if((r.updatedAt||'')>(db.records[i].updatedAt||''))db.records[i]=r});
+      }else if(confirm('REPLACE all existing records with the backup?\n(Current data will be lost)'))db.records=recs;
+      else return;
+      persistDB();renderData();toast('Restore complete');
+    }catch(err){alert('Invalid backup file.')}
+  };
+  rd.readAsText(f);
+});
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+
+/* ---------- data sheet ---------- */
+function filtered(){
+  const q=$('#fQ').value.trim().toLowerCase(),from=$('#fFrom').value,to=$('#fTo').value,st=$('#fSt').value;
+  return db.records.filter(r=>{
+    if(q&&!(r.styleNo+' '+r.buyer+' '+r.po+' '+(r.pos||[]).map(x=>x.po).join(' ')+' '+(r.colors||[]).map(x=>x.color).join(' ')).toLowerCase().includes(q))return false;
+    if(from&&(r.meetingDate||'')<from)return false;
+    if(to&&(r.meetingDate||'')>to)return false;
+    const s=stats(r),comp=s.reqDone===s.reqTotal&&s.disDone===s.disTotal;
+    if(st==='complete'&&!comp)return false;if(st==='incomplete'&&comp)return false;
+    return true;
+  }).sort((a,b)=>(b.meetingDate||'').localeCompare(a.meetingDate||'')||(b.updatedAt||'').localeCompare(a.updatedAt||''));
+}
+function renderData(){
+  const rs=filtered();
+  let h='<tr><th>#</th><th>Style No</th><th>Buyer</th><th>PO</th><th>Qty</th><th>Meeting Date</th><th>Plan Cut</th><th>Color Qty</th><th>PO Qty</th><th>Delivery</th><th>Attendance</th><th>Requirements</th><th>Discussion</th><th>Status</th><th>Updated</th><th>Actions</th></tr>';
+  rs.forEach((r,i)=>{
+    const s=stats(r),comp=s.reqDone===s.reqTotal&&s.disDone===s.disTotal;
+    h+=`<tr class="rw"><td>${i+1}</td><td><b>${esc(r.styleNo)}</b></td><td>${esc(r.buyer)}</td><td>${esc(r.po)}</td><td>${esc(r.qty)}</td><td>${esc(r.meetingDate)}</td><td>${esc(r.planCutDate)}</td><td>${ordInfo(r).ct.toLocaleString()}</td><td>${ordInfo(r).pt.toLocaleString()}</td><td>${(()=>{const o=ordInfo(r);return o.first?(o.first===o.last?o.first:o.first+' → '+o.last):'-'})()}</td><td>${s.pres}/${s.pTotal}</td><td>${s.reqDone}/${s.reqTotal}</td><td>${s.disDone}/${s.disTotal}</td><td><span class="pill ${comp?'ok':'pr'}">${comp?'Complete':'Incomplete'}</span></td><td>${esc((r.updatedAt||'').slice(0,16).replace('T',' '))}</td><td><button class="b" data-act="open" data-id="${r.id}">Open</button> <button class="b" data-act="prt" data-id="${r.id}">🖨</button> <button class="b" data-act="dup" data-id="${r.id}">⎘</button> <button class="b red" data-act="delrec" data-id="${r.id}">✕</button></td></tr>`;
+  });
+  if(!rs.length)h+='<tr><td colspan="16" class="muted" style="padding:20px;text-align:center">No records found.</td></tr>';
+  $('#tbl').innerHTML=h;
+  $('#dsInfo').textContent=`Showing ${rs.length} of ${db.records.length} record(s). Tip: Open a record to edit, ⎘ duplicates it for a new day.`;
+  $('#cnt').textContent='('+db.records.length+')';
+}
+['#fQ','#fFrom','#fTo','#fSt'].forEach(s=>{$(s).addEventListener('input',renderData)});
+function showTab(t){
+  const f=t==='form';
+  $('#pgForm').hidden=!f;$('#pgData').hidden=f;
+  $('#tabForm').classList.toggle('on',f);$('#tabData').classList.toggle('on',!f);
+  if(!f)renderData();
+}
+
+/* ---------- export / report ---------- */
+const safe=s=>String(s).replace(/[^\w\-]+/g,'_');
+function summaryRows(rs){
+  const rows=[['Style No','Buyer','PO','Qty','Meeting Date','Plan Cut Date','Color Qty Total','PO Qty Total','First Delivery','Last Delivery','Present','Absent','Excused','Total Participants','Requirements Ready','Requirements Total','Discussed','Discussion Total','Status','Updated']];
+  rs.forEach(r=>{const s=stats(r),o=ordInfo(r);rows.push([r.styleNo,r.buyer,r.po,r.qty,r.meetingDate,r.planCutDate,o.ct,o.pt,o.first,o.last,s.pres,s.abs,s.exc,s.pTotal,s.reqDone,s.reqTotal,s.disDone,s.disTotal,(s.reqDone===s.reqTotal&&s.disDone===s.disTotal)?'Complete':'Incomplete',(r.updatedAt||'').slice(0,16).replace('T',' ')])});
+  return rows;
+}
+function detailRows(rs){
+  const rows=[['Style No','Buyer','PO','Qty','Meeting Date','Plan Cut Date','Section','No','Item','Result / Status / Qty','Name / Responsible','Signed / Due / Delivery','Remark / Notes']];
+  rs.forEach(r=>{
+    const b=[r.styleNo,r.buyer,r.po,r.qty,r.meetingDate,r.planCutDate],s=r.sections;
+    s.participants.forEach((x,i)=>rows.push([...b,'Participants',i+1,x.text,x.att||'-',x.name,x.signed?'Signed':'',x.remark]));
+    s.reqMain.forEach((x,i)=>rows.push([...b,'Requirements',i+1,x.text,x.done?'Ready':'Pending','','',x.remark]));
+    s.reqStyle.forEach((x,i)=>rows.push([...b,'Style File',i+1,x.text,x.done?'Ready':'Pending','','',x.remark]));
+    s.discussion.forEach((x,i)=>rows.push([...b,'Discussion',i+1,x.text,x.status,x.owner,x.due,x.notes]));
+    (r.colors||[]).forEach((x,i)=>rows.push([...b,'Color wise Qty',i+1,x.color,x.qty,'','',x.remark]));
+    (r.pos||[]).forEach((x,i)=>rows.push([...b,'PO wise Qty',i+1,x.po,x.qty,'',x.delivery,x.remark]));
+  });
+  return rows;
+}
+function rowsToTable(rows,print){
+  const th=rows[0].map(c=>`<th>${esc(c)}</th>`).join('');
+  const tb=rows.slice(1).map(r=>'<tr>'+r.map(c=>`<td>${esc(c)}</td>`).join('')+'</tr>').join('');
+  return `<table border="1" cellspacing="0" cellpadding="4"><thead><tr>${th}</tr></thead><tbody>${tb}</tbody></table>`;
+}
+const summaryTable=(rs,print)=>rowsToTable(summaryRows(rs),print);
+const detailTable=rs=>rowsToTable(detailRows(rs));
+const toCSV=rows=>rows.map(r=>r.map(c=>'"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+function xlsDoc(body,name){
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>'+esc(name)+'</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body>'+body+'</body></html>';
+}
+const RCSS='body{font-family:Arial,sans-serif;font-size:11pt;color:#111;margin:16px}h1{font-size:18pt;margin:0 0 2px}h2{font-size:13pt;margin:16px 0 6px;border-bottom:2px solid #333;padding-bottom:3px}table{border-collapse:collapse;width:100%;margin-bottom:8px}td,th{border:1px solid #777;padding:4px 6px;vertical-align:top;font-size:9.5pt;text-align:left}th{background:#e8e8e8}.s{font-size:9pt;color:#444}.pre{white-space:pre-wrap}@page{size:A4;margin:12mm}';
+const docWrap=(title,body)=>`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${RCSS}</style></head><body><h1>${esc(title)}</h1>${body}</body></html>`;
+function ordReport(r){
+  const ct=(r.colors||[]).reduce((a,x)=>a+num(x.qty),0),pt=(r.pos||[]).reduce((a,x)=>a+num(x.qty),0);
+  return `<h2>Order Breakdown</h2><table><tr><th>#</th><th>Color</th><th>Qty</th><th>Remark</th></tr>${(r.colors||[]).map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.color)}</td><td>${esc(x.qty)}</td><td>${esc(x.remark)}</td></tr>`).join('')}<tr><th colspan="2">Total (Color wise)</th><th colspan="2">${ct.toLocaleString()}</th></tr></table>
+<table><tr><th>#</th><th>PO No</th><th>Qty</th><th>Delivery Date</th><th>Remark</th></tr>${(r.pos||[]).map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.po)}</td><td>${esc(x.qty)}</td><td>${esc(x.delivery)}</td><td>${esc(x.remark)}</td></tr>`).join('')}<tr><th colspan="2">Total (PO wise)</th><th colspan="3">${pt.toLocaleString()}</th></tr></table>`;
+}
+function reportHTML(r){
+  const s=r.sections,st=stats(r);
+  const info=`<table><tr><th>Style No</th><td>${esc(r.styleNo)}</td><th>Buyer</th><td>${esc(r.buyer)}</td><th>PO</th><td>${esc(r.po)}</td></tr><tr><th>Order Qty</th><td>${esc(r.qty)}</td><th>PP Meeting Date</th><td>${esc(r.meetingDate)}</td><th>Plan Cut Date</th><td>${esc(r.planCutDate)}</td></tr><tr><th>Venue</th><td>${esc(r.venue)}</td><th>Hosted by</th><td colspan="3">${esc(r.host)}</td></tr></table>`;
+  const part=`<table><tr><th>#</th><th>Role</th><th>Name</th><th>Attendance</th><th>Remark</th><th style="width:110px">Signature</th></tr>${s.participants.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.text)}</td><td>${esc(x.name)}</td><td>${esc(x.att||'-')}</td><td>${esc(x.remark)}</td><td style="height:26px">${x.signed?'✔':''}</td></tr>`).join('')}</table><p class="s">Present ${st.pres} / ${st.pTotal} • Absent ${st.abs} • Excused ${st.exc}</p>`;
+  const chk=a=>`<table><tr><th>#</th><th>Item</th><th>Status</th><th>Remark</th></tr>${a.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.text)}</td><td>${x.done?'✔ Ready':'✘ Pending'}</td><td>${esc(x.remark)}</td></tr>`).join('')}</table>`;
+  const dis=`<table><tr><th>#</th><th>Discussion Point</th><th>Status</th><th>Responsible</th><th>Due</th><th>Notes / Decision</th></tr>${s.discussion.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.text)}</td><td>${esc(x.status)}</td><td>${esc(x.owner)}</td><td>${esc(x.due)}</td><td class="pre">${esc(x.notes)}</td></tr>`).join('')}</table>`;
+  return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>PP Meeting Recap</title><style>${RCSS}</style></head><body>
+<h1>Pre-Production (PP) Meeting Recap Report</h1><div class="s">Generated ${esc(new Date().toLocaleString())}</div>${info}${ordReport(r)}
+${r.notes?`<p class="pre"><b>Notes:</b> ${esc(r.notes)}</p>`:''}
+<h2>1. Participants – Attendance</h2>${part}
+<h2>2. Requirements Checklist</h2>${chk(s.reqMain)}
+<h2>2a. Style File Contents</h2>${chk(s.reqStyle)}
+<h2>3. Discussion Points</h2>${dis}
+<p class="s">PP meeting recap must be signed by all participants and filed on top of the style file.</p></body></html>`;
+}
+
+/* ---------- init ---------- */
+resetHist();render();
+</script>
+</body>
+</html>
